@@ -1,0 +1,32 @@
+Generic single-database configuration for Alembic migrations.
+
+## Quick Start
+
+### Create a new migration
+```bash
+alembic revision --autogenerate -m "description of changes"
+```
+
+### Apply migrations
+```bash
+alembic upgrade head
+```
+
+### Downgrade migrations
+```bash
+alembic downgrade -1  # Go back one revision
+alembic downgrade base  # Go back to the beginning
+```
+
+### View migration history
+```bash
+alembic history
+alembic current
+```
+
+## Directory Structure
+
+- `env.py` - Alembic environment configuration
+- `script.py.mako` - Template for generating migration scripts
+- `versions/` - Directory containing migration scripts (auto-generated)
+

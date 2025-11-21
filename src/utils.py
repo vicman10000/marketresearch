@@ -5,6 +5,9 @@ import os
 import json
 from datetime import datetime
 import pandas as pd
+from src.logging_config import get_logger
+
+logger = get_logger(__name__)
 
 
 def save_metadata(data_dict, output_path):
@@ -20,7 +23,7 @@ def save_metadata(data_dict, output_path):
     with open(output_path, 'w') as f:
         json.dump(data_dict, f, indent=2, default=str)
 
-    print(f"Metadata saved to {output_path}")
+    logger.info("metadata_saved", output_path=output_path)
 
 
 def load_cached_data(cache_path):
@@ -38,10 +41,10 @@ def load_cached_data(cache_path):
 
     try:
         df = pd.read_csv(cache_path, parse_dates=['Date'])
-        print(f"Loaded cached data from {cache_path}")
+        logger.info("loaded_cached_data", cache_path=cache_path)
         return df
     except Exception as e:
-        print(f"Error loading cached data: {e}")
+        logger.error("error_loading_cached_data", cache_path=cache_path, error=str(e))
         return None
 
 
@@ -69,6 +72,17 @@ def print_summary_stats(df):
     Args:
         df: DataFrame to summarize
     """
+    sector_breakdown = df['Sector'].value_counts().to_dict()
+    
+    logger.info("dataset_summary",
+                total_rows=len(df),
+                unique_stocks=df['Symbol'].nunique(),
+                date_range_start=str(df['Date'].min()),
+                date_range_end=str(df['Date'].max()),
+                total_sectors=df['Sector'].nunique(),
+                sector_breakdown=sector_breakdown)
+    
+    # Also print for user visibility (legacy compatibility)
     print("\n" + "="*50)
     print("DATASET SUMMARY")
     print("="*50)
@@ -143,7 +157,7 @@ def generate_report(processed_data, sector_summary, output_path):
         f.write(report_text)
 
     print(report_text)
-    print(f"\nReport saved to {output_path}")
+    logger.info("report_generated", output_path=output_path)
 
 
 def validate_dataframe(df, required_columns):
@@ -160,7 +174,7 @@ def validate_dataframe(df, required_columns):
     missing = [col for col in required_columns if col not in df.columns]
 
     if missing:
-        print(f"ERROR: Missing required columns: {missing}")
+        logger.error("missing_required_columns", missing_columns=missing)
         return False
 
     return True

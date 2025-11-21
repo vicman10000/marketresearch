@@ -57,6 +57,7 @@ outputs/*.json
 
 # pytest
 .pytest_cache/
+.tox/
 
 # Coverage
 htmlcov/
@@ -64,6 +65,11 @@ htmlcov/
 .coverage.*
 coverage.xml
 *.cover
+.hypothesis/
+
+# Test artifacts
+test_*.db
+*.db-journal
 
 # Examples output
 examples/*.html

@@ -16,6 +16,7 @@ from src.data_processor import DataProcessor
 from src.static_visualizer import StaticVisualizer
 from src.animated_visualizer import AnimatedVisualizer
 from src.utils import save_metadata, print_summary_stats, generate_report
+from src.logging_config import setup_logging, get_logger
 import config
 
 
@@ -34,11 +35,18 @@ class MarketVisualizationApp:
             use_cache: Whether to use cached data
             animation_period: Period for animation ('D', 'W', 'M')
         """
+        self.logger = get_logger(__name__)
         self.start_date = start_date or config.DEFAULT_START_DATE
         self.end_date = end_date or config.DEFAULT_END_DATE
         self.max_stocks = max_stocks
         self.use_cache = use_cache
         self.animation_period = animation_period
+
+        self.logger.info("app_initialized",
+                        start_date=self.start_date,
+                        end_date=self.end_date,
+                        max_stocks=self.max_stocks,
+                        animation_period=self.animation_period)
 
         self.fetcher = DataFetcher()
         self.processor = DataProcessor()
@@ -52,9 +60,7 @@ class MarketVisualizationApp:
 
     def fetch_data(self):
         """Fetch raw data from sources"""
-        print("\n" + "="*60)
-        print("STEP 1: FETCHING DATA")
-        print("="*60)
+        self.logger.info("step_starting", step=1, description="Fetching data")
 
         self.raw_data = self.fetcher.fetch_complete_dataset(
             start_date=self.start_date,
@@ -64,20 +70,21 @@ class MarketVisualizationApp:
         )
 
         if self.raw_data.empty:
-            print("ERROR: Failed to fetch data!")
+            self.logger.error("failed_to_fetch_data")
             return False
 
+        self.logger.info("data_fetched_successfully",
+                        rows=len(self.raw_data),
+                        unique_symbols=self.raw_data['Symbol'].nunique())
         print_summary_stats(self.raw_data)
         return True
 
     def process_data(self):
         """Process and calculate metrics"""
-        print("\n" + "="*60)
-        print("STEP 2: PROCESSING DATA")
-        print("="*60)
+        self.logger.info("step_starting", step=2, description="Processing data")
 
         if self.raw_data is None or self.raw_data.empty:
-            print("ERROR: No raw data available!")
+            self.logger.error("no_raw_data_available")
             return False
 
         results = self.processor.process_complete_pipeline(
@@ -86,26 +93,28 @@ class MarketVisualizationApp:
         )
 
         if not results:
-            print("ERROR: Failed to process data!")
+            self.logger.error("failed_to_process_data")
             return False
 
         self.processed_data = results['processed']
         self.animation_data = results['animation']
         self.sector_summary = results['sector_summary']
 
+        self.logger.info("data_processed_successfully",
+                        processed_rows=len(self.processed_data),
+                        animation_rows=len(self.animation_data),
+                        sectors=len(self.sector_summary))
         return True
 
     def create_static_visualizations(self):
         """Create all static visualizations"""
-        print("\n" + "="*60)
-        print("STEP 3: CREATING STATIC VISUALIZATIONS")
-        print("="*60)
+        self.logger.info("step_starting", step=3, description="Creating static visualizations")
 
         output_dir = config.STATIC_OUTPUT_DIR
 
         try:
             # 1. Main bubble chart
-            print("\n1. Creating bubble chart...")
+            self.logger.info("creating_visualization", type="bubble_chart")
             self.static_viz.create_bubble_chart(
                 self.processed_data,
                 save_path=os.path.join(output_dir, 'bubble_chart.html'),
@@ -113,7 +122,7 @@ class MarketVisualizationApp:
             )
 
             # 2. Sector performance
-            print("\n2. Creating sector performance chart...")
+            self.logger.info("creating_visualization", type="sector_performance")
             self.static_viz.create_sector_performance_chart(
                 self.sector_summary,
                 save_path=os.path.join(output_dir, 'sector_performance.html'),
@@ -121,7 +130,7 @@ class MarketVisualizationApp:
             )
 
             # 3. Market cap distribution
-            print("\n3. Creating market cap distribution...")
+            self.logger.info("creating_visualization", type="market_cap_distribution")
             self.static_viz.create_market_cap_distribution(
                 self.processed_data,
                 save_path=os.path.join(output_dir, 'market_cap_distribution.html'),
@@ -129,7 +138,7 @@ class MarketVisualizationApp:
             )
 
             # 4. Top performers
-            print("\n4. Creating top performers chart...")
+            self.logger.info("creating_visualization", type="top_performers")
             self.static_viz.create_top_performers_chart(
                 self.processed_data,
                 n=20,
@@ -138,7 +147,7 @@ class MarketVisualizationApp:
             )
 
             # 5. Comprehensive dashboard
-            print("\n5. Creating comprehensive dashboard...")
+            self.logger.info("creating_visualization", type="dashboard")
             self.static_viz.create_dashboard(
                 self.processed_data,
                 self.sector_summary,
@@ -146,20 +155,18 @@ class MarketVisualizationApp:
                 show=False
             )
 
-            print(f"\n✓ All static visualizations saved to: {output_dir}")
+            self.logger.info("static_visualizations_complete", output_dir=output_dir)
             return True
 
         except Exception as e:
-            print(f"ERROR creating static visualizations: {e}")
-            import traceback
-            traceback.print_exc()
+            self.logger.error("error_creating_static_visualizations", 
+                            error=str(e),
+                            exc_info=True)
             return False
 
     def create_animated_visualizations(self):
         """Create all animated visualizations"""
-        print("\n" + "="*60)
-        print("STEP 4: CREATING ANIMATED VISUALIZATIONS")
-        print("="*60)
+        self.logger.info("step_starting", step=4, description="Creating animated visualizations")
 
         try:
             self.animated_viz.create_all_animations(
@@ -167,20 +174,18 @@ class MarketVisualizationApp:
                 output_dir=config.ANIMATED_OUTPUT_DIR
             )
 
-            print(f"\n✓ All animated visualizations saved to: {config.ANIMATED_OUTPUT_DIR}")
+            self.logger.info("animated_visualizations_complete", output_dir=config.ANIMATED_OUTPUT_DIR)
             return True
 
         except Exception as e:
-            print(f"ERROR creating animated visualizations: {e}")
-            import traceback
-            traceback.print_exc()
+            self.logger.error("error_creating_animated_visualizations",
+                            error=str(e),
+                            exc_info=True)
             return False
 
     def generate_outputs(self):
         """Generate additional outputs (reports, metadata)"""
-        print("\n" + "="*60)
-        print("STEP 5: GENERATING OUTPUTS")
-        print("="*60)
+        self.logger.info("step_starting", step=5, description="Generating outputs")
 
         try:
             # Generate text report
@@ -233,13 +238,13 @@ class MarketVisualizationApp:
                 index=False
             )
 
-            print("\n✓ All outputs generated successfully")
+            self.logger.info("outputs_generated_successfully")
             return True
 
         except Exception as e:
-            print(f"ERROR generating outputs: {e}")
-            import traceback
-            traceback.print_exc()
+            self.logger.error("error_generating_outputs",
+                            error=str(e),
+                            exc_info=True)
             return False
     
     def _copy_dashboard_assets(self):
@@ -263,18 +268,18 @@ class MarketVisualizationApp:
                     dst = os.path.join(assets_dir, filename)
                     if os.path.exists(src):
                         shutil.copy2(src, dst)
-                        print(f"Copied {filename} to assets/")
+                        self.logger.debug("file_copied", filename=filename, destination="assets/")
             
             # Copy index.html if it exists
             if os.path.exists(source_index):
                 dst = os.path.join(config.OUTPUT_DIR, 'index.html')
                 shutil.copy2(source_index, dst)
-                print(f"Copied index.html to outputs/")
+                self.logger.debug("file_copied", filename="index.html", destination="outputs/")
             
-            print("\n✓ Dashboard assets copied successfully")
+            self.logger.info("dashboard_assets_copied_successfully")
             
         except Exception as e:
-            print(f"Warning: Could not copy dashboard assets: {e}")
+            self.logger.warning("could_not_copy_dashboard_assets", error=str(e))
 
     def run(self, skip_static=False, skip_animated=False):
         """
@@ -287,6 +292,14 @@ class MarketVisualizationApp:
         Returns:
             Boolean indicating success
         """
+        self.logger.info("pipeline_starting",
+                        start_date=self.start_date,
+                        end_date=self.end_date,
+                        max_stocks=self.max_stocks or 'All',
+                        animation_period=self.animation_period,
+                        skip_static=skip_static,
+                        skip_animated=skip_animated)
+        
         print("\n" + "="*60)
         print("MARKET RESEARCH VISUALIZATION")
         print("Complete End-to-End Solution")
@@ -308,16 +321,22 @@ class MarketVisualizationApp:
         # Step 3: Create static visualizations
         if not skip_static:
             if not self.create_static_visualizations():
-                print("Warning: Some static visualizations failed")
+                self.logger.warning("some_static_visualizations_failed")
 
         # Step 4: Create animated visualizations
         if not skip_animated:
             if not self.create_animated_visualizations():
-                print("Warning: Some animated visualizations failed")
+                self.logger.warning("some_animated_visualizations_failed")
 
         # Step 5: Generate outputs
         self.generate_outputs()
 
+        self.logger.info("pipeline_complete",
+                        output_dir=config.OUTPUT_DIR,
+                        static_dir=config.STATIC_OUTPUT_DIR,
+                        animated_dir=config.ANIMATED_OUTPUT_DIR,
+                        data_dir=config.DATA_DIR)
+        
         print("\n" + "="*60)
         print("PIPELINE COMPLETE!")
         print("="*60)
@@ -406,6 +425,16 @@ Examples:
 
     args = parser.parse_args()
 
+    # Setup logging
+    setup_logging(log_level=config.LOG_LEVEL, log_file=config.LOG_FILE)
+    logger = get_logger(__name__)
+    
+    logger.info("application_started",
+                start_date=args.start_date,
+                end_date=args.end_date,
+                max_stocks=args.max_stocks,
+                animation_period=args.animation_period)
+
     # Create app instance
     app = MarketVisualizationApp(
         start_date=args.start_date,
@@ -421,12 +450,15 @@ Examples:
             skip_static=args.skip_static,
             skip_animated=args.skip_animated
         )
+        logger.info("application_finished", success=success)
         sys.exit(0 if success else 1)
     except KeyboardInterrupt:
         print("\n\nInterrupted by user. Exiting...")
+        logger.warning("application_interrupted_by_user")
         sys.exit(1)
     except Exception as e:
         print(f"\n\nFATAL ERROR: {e}")
+        logger.error("fatal_application_error", error=str(e), exc_info=True)
         import traceback
         traceback.print_exc()
         sys.exit(1)

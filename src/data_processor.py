@@ -9,6 +9,7 @@ import os
 import sys
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import config
+from src.logging_config import get_logger
 
 
 class DataProcessor:
@@ -16,7 +17,7 @@ class DataProcessor:
 
     def __init__(self):
         """Initialize DataProcessor"""
-        pass
+        self.logger = get_logger(__name__)
 
     def clean_data(self, df):
         """
@@ -28,7 +29,7 @@ class DataProcessor:
         Returns:
             Cleaned DataFrame
         """
-        print("Cleaning data...")
+        self.logger.info("cleaning_data_started")
 
         # Create a copy
         df = df.copy()
@@ -40,7 +41,10 @@ class DataProcessor:
         # Remove rows with missing critical data
         initial_rows = len(df)
         df = df.dropna(subset=['Close', 'Symbol', 'Date'])
-        print(f"Removed {initial_rows - len(df)} rows with missing critical data")
+        rows_removed = initial_rows - len(df)
+        self.logger.info("removed_rows_with_missing_data", 
+                        rows_removed=rows_removed,
+                        initial_rows=initial_rows)
 
         # Fill missing Sector with 'Unknown'
         if 'Sector' in df.columns:
@@ -52,7 +56,8 @@ class DataProcessor:
         # Sort by Symbol and Date
         df = df.sort_values(['Symbol', 'Date'])
 
-        print(f"Cleaned data: {len(df)} rows")
+        self.logger.info("cleaning_data_completed", 
+                        cleaned_rows=len(df))
 
         return df
 
@@ -66,7 +71,7 @@ class DataProcessor:
         Returns:
             DataFrame with additional return columns
         """
-        print("Calculating returns...")
+        self.logger.info("calculating_returns_started")
 
         df = df.copy()
 
@@ -108,7 +113,7 @@ class DataProcessor:
             lambda x: x.rolling(window=20, min_periods=1).std() * np.sqrt(252) * 100
         )
 
-        print("Returns calculated")
+        self.logger.info("calculating_returns_completed")
 
         return df
 
@@ -122,13 +127,13 @@ class DataProcessor:
         Returns:
             DataFrame with fundamental metrics
         """
-        print("Processing fundamental metrics...")
+        self.logger.info("processing_fundamentals_started")
 
         df = df.copy()
 
         # If Market_Cap is missing, estimate from Volume and Close
         if 'Market_Cap' not in df.columns or df['Market_Cap'].isna().all():
-            print("Market cap data not available, using proxy based on volume")
+            self.logger.warning("market_cap_missing_using_proxy")
             # Use volume * close as a proxy (not accurate but for visualization)
             df['Market_Cap'] = df['Volume'] * df['Close']
 
@@ -139,7 +144,7 @@ class DataProcessor:
         # Calculate market cap in billions for display
         df['Market_Cap_Billions'] = df['Market_Cap'] / 1e9
 
-        print("Fundamental metrics processed")
+        self.logger.info("processing_fundamentals_completed")
 
         return df
 
@@ -154,7 +159,7 @@ class DataProcessor:
         Returns:
             Aggregated DataFrame
         """
-        print(f"Aggregating data by period: {period}")
+        self.logger.info("aggregating_data_by_period", period=period)
 
         df = df.copy()
 
@@ -179,7 +184,7 @@ class DataProcessor:
         agg_df['Date'] = agg_df['Period'].dt.to_timestamp()
         agg_df = agg_df.drop('Period', axis=1)
 
-        print(f"Aggregated to {len(agg_df)} rows")
+        self.logger.info("aggregation_completed", aggregated_rows=len(agg_df))
 
         return agg_df
 
@@ -194,7 +199,7 @@ class DataProcessor:
         Returns:
             DataFrame ready for animated visualization
         """
-        print("Preparing data for animation...")
+        self.logger.info("preparing_animation_data_started", period=period)
 
         # Aggregate by period
         anim_df = self.aggregate_by_period(df, period=period)
@@ -205,7 +210,7 @@ class DataProcessor:
 
         missing_cols = [col for col in required_cols if col not in anim_df.columns]
         if missing_cols:
-            print(f"Warning: Missing columns: {missing_cols}")
+            self.logger.warning("missing_columns_in_animation_data", missing_columns=missing_cols)
 
         # Remove any remaining NaN values in critical columns
         anim_df = anim_df.dropna(subset=['YTD_Return', 'Market_Cap', 'Close'])
@@ -216,7 +221,9 @@ class DataProcessor:
         # Sort by date
         anim_df = anim_df.sort_values('Date')
 
-        print(f"Animation data ready: {len(anim_df)} rows across {anim_df['Year_Month'].nunique()} time periods")
+        self.logger.info("preparing_animation_data_completed", 
+                        total_rows=len(anim_df),
+                        time_periods=anim_df['Year_Month'].nunique())
 
         return anim_df
 
@@ -231,7 +238,7 @@ class DataProcessor:
             DataFrame with sector summaries
         """
         if 'Sector' not in df.columns:
-            print("No sector information available")
+            self.logger.warning("no_sector_information_available")
             return pd.DataFrame()
 
         # Get latest date data only
@@ -265,15 +272,13 @@ class DataProcessor:
         Returns:
             Dictionary with processed data, animation data, and sector summary
         """
-        print("\n" + "="*50)
-        print("STARTING DATA PROCESSING PIPELINE")
-        print("="*50)
+        self.logger.info("processing_pipeline_started", animation_period=animation_period)
 
         # Clean data
         cleaned_df = self.clean_data(raw_df)
 
         if cleaned_df.empty:
-            print("No data to process!")
+            self.logger.error("no_data_to_process")
             return None
 
         # Calculate returns
@@ -288,13 +293,10 @@ class DataProcessor:
         # Get sector summary
         sector_summary = self.get_sector_summary(processed_df)
 
-        print("\n" + "="*50)
-        print("PROCESSING COMPLETE")
-        print("="*50)
-
-        print(f"\nProcessed data shape: {processed_df.shape}")
-        print(f"Animation data shape: {animation_df.shape}")
-        print(f"Sector summary shape: {sector_summary.shape}")
+        self.logger.info("processing_pipeline_completed",
+                        processed_shape=processed_df.shape,
+                        animation_shape=animation_df.shape,
+                        sector_summary_shape=sector_summary.shape)
 
         return {
             'processed': processed_df,

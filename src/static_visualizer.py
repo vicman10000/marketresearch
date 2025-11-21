@@ -11,6 +11,7 @@ import os
 import sys
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import config
+from src.logging_config import get_logger
 
 
 class StaticVisualizer:
@@ -18,6 +19,7 @@ class StaticVisualizer:
 
     def __init__(self):
         """Initialize StaticVisualizer"""
+        self.logger = get_logger(__name__)
         self.sector_colors = config.SECTOR_COLORS
         
         # Professional financial theme configuration
@@ -182,7 +184,7 @@ class StaticVisualizer:
         if save_path:
             os.makedirs(os.path.dirname(save_path), exist_ok=True)
             fig.write_html(save_path)
-            print(f"Saved bubble chart to {save_path}")
+            self.logger.info("saved_bubble_chart", save_path=save_path)
 
         if show:
             fig.show()
@@ -202,7 +204,7 @@ class StaticVisualizer:
             Plotly figure object
         """
         if sector_summary.empty:
-            print("No sector summary data available")
+            self.logger.warning("no_sector_summary_data_available")
             return None
 
         # Sort by average return
@@ -253,7 +255,7 @@ class StaticVisualizer:
         if save_path:
             os.makedirs(os.path.dirname(save_path), exist_ok=True)
             fig.write_html(save_path)
-            print(f"Saved sector performance chart to {save_path}")
+            self.logger.info("saved_sector_performance_chart", save_path=save_path)
 
         if show:
             fig.show()
@@ -306,7 +308,7 @@ class StaticVisualizer:
         if save_path:
             os.makedirs(os.path.dirname(save_path), exist_ok=True)
             fig.write_html(save_path)
-            print(f"Saved market cap distribution to {save_path}")
+            self.logger.info("saved_market_cap_distribution", save_path=save_path)
 
         if show:
             fig.show()
@@ -369,7 +371,7 @@ class StaticVisualizer:
         if save_path:
             os.makedirs(os.path.dirname(save_path), exist_ok=True)
             fig.write_html(save_path)
-            print(f"Saved top performers chart to {save_path}")
+            self.logger.info("saved_top_performers_chart", save_path=save_path)
 
         if show:
             fig.show()
@@ -495,7 +497,7 @@ class StaticVisualizer:
         if save_path:
             os.makedirs(os.path.dirname(save_path), exist_ok=True)
             fig.write_html(save_path)
-            print(f"Saved dashboard to {save_path}")
+            self.logger.info("saved_dashboard", save_path=save_path)
 
         if show:
             fig.show()

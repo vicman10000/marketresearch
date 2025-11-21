@@ -10,6 +10,7 @@ import os
 import sys
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import config
+from src.logging_config import get_logger
 
 
 class AnimatedVisualizer:
@@ -17,6 +18,7 @@ class AnimatedVisualizer:
 
     def __init__(self):
         """Initialize AnimatedVisualizer"""
+        self.logger = get_logger(__name__)
         self.sector_colors = config.SECTOR_COLORS
         
         # Professional financial theme configuration (same as static)
@@ -123,7 +125,9 @@ class AnimatedVisualizer:
 
         # Ensure animation frame column exists
         if animation_frame not in df.columns:
-            print(f"Warning: {animation_frame} column not found. Creating from Date...")
+            self.logger.warning("animation_frame_column_missing",
+                               column=animation_frame,
+                               action="creating_from_date")
             df[animation_frame] = pd.to_datetime(df['Date']).dt.strftime('%Y-%m')
 
         # Calculate fixed axis ranges for consistent animation
@@ -251,7 +255,7 @@ class AnimatedVisualizer:
         if save_path:
             os.makedirs(os.path.dirname(save_path), exist_ok=True)
             fig.write_html(save_path)
-            print(f"Saved animated bubble chart to {save_path}")
+            self.logger.info("saved_animated_bubble_chart", save_path=save_path)
 
         if show:
             fig.show()
@@ -311,7 +315,7 @@ class AnimatedVisualizer:
         if save_path:
             os.makedirs(os.path.dirname(save_path), exist_ok=True)
             fig.write_html(save_path)
-            print(f"Saved animated sector race to {save_path}")
+            self.logger.info("saved_animated_sector_race", save_path=save_path)
 
         if show:
             fig.show()
@@ -406,7 +410,7 @@ class AnimatedVisualizer:
         if save_path:
             os.makedirs(os.path.dirname(save_path), exist_ok=True)
             fig.write_html(save_path)
-            print(f"Saved animated swarm plot to {save_path}")
+            self.logger.info("saved_animated_swarm_plot", save_path=save_path)
 
         if show:
             fig.show()
@@ -474,7 +478,7 @@ class AnimatedVisualizer:
         if save_path:
             os.makedirs(os.path.dirname(save_path), exist_ok=True)
             fig.write_html(save_path)
-            print(f"Saved 3D animated visualization to {save_path}")
+            self.logger.info("saved_3d_animated_visualization", save_path=save_path)
 
         if show:
             fig.show()
@@ -497,14 +501,12 @@ class AnimatedVisualizer:
 
         os.makedirs(output_dir, exist_ok=True)
 
-        print("\n" + "="*50)
-        print("CREATING ANIMATED VISUALIZATIONS")
-        print("="*50)
+        self.logger.info("creating_animated_visualizations_started", output_dir=output_dir)
 
         figures = {}
 
         # 1. Standard animated bubble chart
-        print("\n1. Creating animated bubble chart...")
+        self.logger.info("creating_animated_bubble_chart")
         figures['bubble'] = self.create_animated_bubble_chart(
             animation_df,
             save_path=os.path.join(output_dir, 'animated_bubble_chart.html'),
@@ -512,7 +514,7 @@ class AnimatedVisualizer:
         )
 
         # 2. Sector race
-        print("\n2. Creating animated sector race...")
+        self.logger.info("creating_animated_sector_race")
         figures['sector_race'] = self.create_animated_sector_race(
             animation_df,
             save_path=os.path.join(output_dir, 'animated_sector_race.html'),
@@ -520,7 +522,7 @@ class AnimatedVisualizer:
         )
 
         # 3. Swarm plot
-        print("\n3. Creating animated swarm plot...")
+        self.logger.info("creating_animated_swarm_plot")
         figures['swarm'] = self.create_animated_swarm_plot(
             animation_df,
             save_path=os.path.join(output_dir, 'animated_swarm_plot.html'),
@@ -528,7 +530,7 @@ class AnimatedVisualizer:
         )
 
         # 4. 3D visualization
-        print("\n4. Creating 3D animated visualization...")
+        self.logger.info("creating_3d_animated_visualization")
         # Add Market_Cap_Billions if not present
         if 'Market_Cap_Billions' not in animation_df.columns:
             animation_df['Market_Cap_Billions'] = animation_df['Market_Cap'] / 1e9
@@ -539,9 +541,7 @@ class AnimatedVisualizer:
             show=False
         )
 
-        print("\n" + "="*50)
-        print(f"ALL ANIMATIONS SAVED TO: {output_dir}")
-        print("="*50)
+        self.logger.info("creating_animated_visualizations_completed", output_dir=output_dir)
 
         return figures
 

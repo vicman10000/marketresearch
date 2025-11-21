@@ -12,8 +12,29 @@ import time
 import requests
 from bs4 import BeautifulSoup
 import sys
+from tenacity import (
+    retry,
+    stop_after_attempt,
+    wait_exponential,
+    retry_if_exception_type,
+    before_sleep_log
+)
+from logging_config import get_logger
+
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import config
+from exceptions import (
+    APIError,
+    NetworkError,
+    DataNotFoundError,
+    wrap_api_error,
+    is_retryable_error
+)
+
+# Initialize logger
+logger = get_logger(__name__)
+from src.logging_config import get_logger
+from src.resilience import retry_on_network_error, retry_on_api_error
 
 
 class DataFetcher:
@@ -26,8 +47,10 @@ class DataFetcher:
         Args:
             cache_dir: Directory to store cached data
         """
+        self.logger = get_logger(__name__)
         self.cache_dir = cache_dir or config.CACHE_DIR
         os.makedirs(self.cache_dir, exist_ok=True)
+        self.logger.debug("data_fetcher_initialized", cache_dir=self.cache_dir)
 
     def fetch_sp500_constituents(self, use_cache=True):
         """
@@ -45,10 +68,15 @@ class DataFetcher:
         if use_cache and os.path.exists(cache_file):
             cache_age = time.time() - os.path.getmtime(cache_file)
             if cache_age < config.CACHE_EXPIRY_HOURS * 3600:
-                print(f"Loading S&P 500 constituents from cache...")
+                self.logger.info("loading_sp500_from_cache", cache_file=cache_file)
                 return pd.read_csv(cache_file)
 
-        print("Fetching S&P 500 constituents from Wikipedia...")
+        self.logger.info("fetching_sp500_from_wikipedia")
+        return self._fetch_sp500_with_retry(cache_file)
+    
+    @retry_on_network_error(max_attempts=3)
+    def _fetch_sp500_with_retry(self, cache_file):
+        """Internal method with retry logic for fetching S&P 500 data"""
         try:
             # Fetch from Wikipedia with headers to avoid 403 error
             import urllib.request
@@ -72,12 +100,12 @@ class DataFetcher:
 
             # Save to cache
             df.to_csv(cache_file, index=False)
-            print(f"Fetched {len(df)} S&P 500 constituents")
+            self.logger.info("fetched_sp500_constituents", total_stocks=len(df))
 
             return df
 
         except Exception as e:
-            print(f"Error fetching S&P 500 constituents: {e}")
+            self.logger.error("error_fetching_sp500_constituents", error=str(e), exc_info=True)
             # Return empty dataframe with expected columns
             return pd.DataFrame(columns=['Symbol', 'Security', 'Sector', 'Sub_Industry'])
 
@@ -99,7 +127,10 @@ class DataFetcher:
         if end_date is None:
             end_date = config.DEFAULT_END_DATE
 
-        print(f"\nFetching stock data for {len(symbols)} symbols from {start_date} to {end_date}...")
+        self.logger.info("fetching_stock_data_started",
+                        total_symbols=len(symbols),
+                        start_date=start_date,
+                        end_date=end_date)
 
         all_data = []
         failed_symbols = []
@@ -121,9 +152,8 @@ class DataFetcher:
                         all_data.append(df)
                         continue
 
-                # Fetch from yfinance
-                ticker = yf.Ticker(symbol)
-                df = ticker.history(start=start_date, end=end_date)
+                # Fetch from yfinance with retry
+                df = self._fetch_single_stock_with_retry(symbol, start_date, end_date)
 
                 if df.empty:
                     failed_symbols.append(symbol)
@@ -142,22 +172,34 @@ class DataFetcher:
                 time.sleep(0.1)
 
             except Exception as e:
-                print(f"\nError fetching data for {symbol}: {e}")
+                self.logger.warning("error_fetching_symbol_data", 
+                                   symbol=symbol, 
+                                   error=str(e))
                 failed_symbols.append(symbol)
                 continue
 
         if failed_symbols:
-            print(f"\nFailed to fetch data for {len(failed_symbols)} symbols: {failed_symbols[:10]}...")
+            self.logger.warning("failed_to_fetch_symbols",
+                               failed_count=len(failed_symbols),
+                               failed_symbols=failed_symbols[:10])
 
         if not all_data:
-            print("No data fetched!")
+            self.logger.error("no_data_fetched")
             return pd.DataFrame()
 
         # Combine all data
         combined_df = pd.concat(all_data, ignore_index=True)
-        print(f"\nSuccessfully fetched data for {len(all_data)} symbols")
+        self.logger.info("fetching_stock_data_completed",
+                        successful_symbols=len(all_data),
+                        total_rows=len(combined_df))
 
         return combined_df
+    
+    @retry_on_api_error(max_attempts=3, min_wait=1, max_wait=10)
+    def _fetch_single_stock_with_retry(self, symbol, start_date, end_date):
+        """Fetch single stock data with retry logic"""
+        ticker = yf.Ticker(symbol)
+        return ticker.history(start=start_date, end=end_date)
 
     def fetch_market_cap(self, symbols):
         """
@@ -169,16 +211,13 @@ class DataFetcher:
         Returns:
             DataFrame with Symbol and Market_Cap columns
         """
-        print(f"\nFetching market cap data for {len(symbols)} symbols...")
+        self.logger.info("fetching_market_caps_started", total_symbols=len(symbols))
 
         market_caps = []
 
         for symbol in tqdm(symbols, desc="Fetching market caps"):
             try:
-                ticker = yf.Ticker(symbol)
-                info = ticker.info
-
-                market_cap = info.get('marketCap', None)
+                market_cap = self._fetch_single_market_cap_with_retry(symbol)
 
                 if market_cap:
                     market_caps.append({
@@ -189,13 +228,22 @@ class DataFetcher:
                 time.sleep(0.1)
 
             except Exception as e:
-                print(f"\nError fetching market cap for {symbol}: {e}")
+                self.logger.warning("error_fetching_market_cap",
+                                   symbol=symbol,
+                                   error=str(e))
                 continue
 
         df = pd.DataFrame(market_caps)
-        print(f"Successfully fetched market cap for {len(df)} symbols")
+        self.logger.info("fetching_market_caps_completed", successful_count=len(df))
 
         return df
+    
+    @retry_on_api_error(max_attempts=3, min_wait=1, max_wait=10)
+    def _fetch_single_market_cap_with_retry(self, symbol):
+        """Fetch single market cap with retry logic"""
+        ticker = yf.Ticker(symbol)
+        info = ticker.info
+        return info.get('marketCap', None)
 
     def fetch_complete_dataset(self, start_date=None, end_date=None,
                               max_stocks=None, use_cache=True):
@@ -217,7 +265,7 @@ class DataFetcher:
         if use_sample_data:
             sample_file = os.path.join(os.path.dirname(self.cache_dir), 'sample_complete_data.csv')
             if os.path.exists(sample_file):
-                print(f"Loading sample data from {sample_file}...")
+                self.logger.info("loading_sample_data", sample_file=sample_file)
                 df = pd.read_csv(sample_file)
                 df['Date'] = pd.to_datetime(df['Date'])
                 
@@ -226,17 +274,20 @@ class DataFetcher:
                     symbols = df['Symbol'].unique()[:max_stocks]
                     df = df[df['Symbol'].isin(symbols)]
                 
-                print(f"Loaded {len(df)} rows for {df['Symbol'].nunique()} stocks")
+                self.logger.info("loaded_sample_data", 
+                                total_rows=len(df),
+                                unique_stocks=df['Symbol'].nunique())
                 return df
             else:
-                print(f"Warning: Sample data file not found at {sample_file}")
-                print("Falling back to live data fetching...")
+                self.logger.warning("sample_data_not_found",
+                                   sample_file=sample_file,
+                                   action="falling_back_to_live_data")
         
         # Fetch S&P 500 constituents
         constituents = self.fetch_sp500_constituents(use_cache=use_cache)
 
         if constituents.empty:
-            print("Failed to fetch S&P 500 constituents!")
+            self.logger.error("failed_to_fetch_sp500_constituents")
             return pd.DataFrame()
 
         # Limit stocks if specified
@@ -254,14 +305,14 @@ class DataFetcher:
         )
 
         if stock_data.empty:
-            print("Failed to fetch stock data!")
+            self.logger.error("failed_to_fetch_stock_data")
             return pd.DataFrame()
 
         # Fetch market caps
         market_caps = self.fetch_market_cap(symbols)
 
         # Merge all data
-        print("\nMerging datasets...")
+        self.logger.info("merging_datasets")
 
         # Drop columns from stock_data that will come from constituents (avoid _x/_y suffixes)
         cols_to_drop = ['Security', 'Sector', 'Sub_Industry']
@@ -280,7 +331,9 @@ class DataFetcher:
         if not market_caps.empty:
             merged = merged.merge(market_caps, on='Symbol', how='left')
 
-        print(f"\nFinal dataset: {len(merged)} rows, {merged['Symbol'].nunique()} unique stocks")
+        self.logger.info("fetch_complete_dataset_finished",
+                        total_rows=len(merged),
+                        unique_stocks=merged['Symbol'].nunique())
 
         return merged
 
