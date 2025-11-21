@@ -3,8 +3,9 @@ Server Configuration
 Centralized configuration for FastAPI server
 """
 import os
-from typing import List
+from typing import List, Union
 from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic import field_validator
 
 
 class ServerSettings(BaseSettings):
@@ -17,11 +18,19 @@ class ServerSettings(BaseSettings):
     RELOAD: bool = False
     
     # CORS
-    CORS_ORIGINS: List[str] = [
+    CORS_ORIGINS: Union[List[str], str] = [
         "http://localhost:3000",
         "http://localhost:8000",
         "http://127.0.0.1:8000",
     ]
+    
+    @field_validator('CORS_ORIGINS', mode='before')
+    @classmethod
+    def parse_cors_origins(cls, v):
+        """Parse CORS_ORIGINS from comma-separated string or list"""
+        if isinstance(v, str):
+            return [origin.strip() for origin in v.split(',') if origin.strip()]
+        return v
     CORS_ALLOW_CREDENTIALS: bool = True
     CORS_ALLOW_METHODS: List[str] = ["*"]
     CORS_ALLOW_HEADERS: List[str] = ["*"]

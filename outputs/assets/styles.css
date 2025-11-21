@@ -575,6 +575,15 @@ body {
     overflow-x: hidden;
 }
 
+/* View switching - hide inactive views */
+.view-content {
+    display: none;
+}
+
+.view-content.active {
+    display: block;
+}
+
 #dashboardView {
     height: 100%;
     display: flex;

@@ -14,6 +14,7 @@ import structlog
 # Add project root to path
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 sys.path.insert(0, str(BASE_DIR))
+sys.path.insert(0, str(BASE_DIR / "src"))
 
 from server.config import settings
 from server.websocket.manager import manager

@@ -218,7 +218,8 @@ class Dashboard {
         } else {
             // Load visualization in iframe
             this.views.dynamic.classList.add('active');
-            this.contentFrame.src = view;
+            // Paths are already correct relative to server root (e.g., static/*, animated/*)
+            this.contentFrame.src = `/${view}`;
             
             // Update header based on view
             const title = this.getTitleForView(view);

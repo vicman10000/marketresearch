@@ -16,6 +16,7 @@ import structlog
 # Add src to path for imports
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 sys.path.insert(0, str(BASE_DIR))
+sys.path.insert(0, str(BASE_DIR / "src"))
 
 from src.data_fetcher import DataFetcher
 from src.data_processor import DataProcessor
