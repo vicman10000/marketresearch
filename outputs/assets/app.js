@@ -22,6 +22,8 @@ class Dashboard {
             report: document.getElementById('reportView')
         };
         
+        this.isFullscreen = false;
+        
         this.init();
     }
     
@@ -63,6 +65,79 @@ class Dashboard {
                 }
             });
         }
+        
+        // Dashboard action buttons
+        this.setupDashboardActions();
+        
+        // Handle fullscreen changes
+        document.addEventListener('fullscreenchange', () => this.handleFullscreenChange());
+    }
+    
+    setupDashboardActions() {
+        const dashboardActionBtns = document.querySelectorAll('.dashboard-action-btn');
+        dashboardActionBtns.forEach((btn, index) => {
+            if (index === 0) { // Fullscreen button
+                btn.addEventListener('click', () => this.toggleFullscreen());
+            } else if (index === 1) { // Download button
+                btn.addEventListener('click', () => this.downloadDashboard());
+            }
+        });
+    }
+    
+    toggleFullscreen() {
+        const dashboardMain = document.querySelector('.dashboard-main');
+        
+        if (!this.isFullscreen) {
+            if (dashboardMain.requestFullscreen) {
+                dashboardMain.requestFullscreen();
+            } else if (dashboardMain.webkitRequestFullscreen) {
+                dashboardMain.webkitRequestFullscreen();
+            } else if (dashboardMain.msRequestFullscreen) {
+                dashboardMain.msRequestFullscreen();
+            }
+        } else {
+            if (document.exitFullscreen) {
+                document.exitFullscreen();
+            } else if (document.webkitExitFullscreen) {
+                document.webkitExitFullscreen();
+            } else if (document.msExitFullscreen) {
+                document.msExitFullscreen();
+            }
+        }
+    }
+    
+    handleFullscreenChange() {
+        this.isFullscreen = document.fullscreenElement !== null;
+        const fullscreenBtn = document.querySelector('.dashboard-action-btn');
+        if (fullscreenBtn) {
+            const icon = fullscreenBtn.querySelector('i');
+            icon.className = this.isFullscreen ? 'fas fa-compress' : 'fas fa-expand';
+        }
+    }
+    
+    downloadDashboard() {
+        // Create notification
+        const notification = document.createElement('div');
+        notification.style.cssText = `
+            position: fixed;
+            top: 100px;
+            right: 32px;
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            color: white;
+            padding: 16px 24px;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            z-index: 10000;
+            animation: slideInRight 0.3s ease;
+            font-weight: 600;
+        `;
+        notification.innerHTML = '<i class="fas fa-info-circle"></i> Dashboard export feature coming soon!';
+        document.body.appendChild(notification);
+        
+        setTimeout(() => {
+            notification.style.animation = 'slideOutRight 0.3s ease';
+            setTimeout(() => notification.remove(), 300);
+        }, 3000);
     }
     
     toggleSidebar() {
