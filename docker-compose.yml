@@ -1,22 +1,66 @@
 version: '3.8'
 
 services:
+  # Web Server - FastAPI application
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile.web
+    image: market-research-visualization-web:latest
+    container_name: market-viz-web
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./outputs:/app/outputs
+      - ./data:/app/data
+      - ./logs:/app/logs
+    environment:
+      - DATABASE_URL=${DATABASE_URL:-sqlite:///./data/market_viz.db}
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY:-your-secret-key-change-in-production}
+      - CORS_ORIGINS=http://localhost:3000,http://localhost:8000
+      - DEBUG=${DEBUG:-false}
+    depends_on:
+      - db
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Database - PostgreSQL
+  db:
+    image: postgres:15-alpine
+    container_name: market-viz-db
+    environment:
+      - POSTGRES_DB=${POSTGRES_DB:-marketviz}
+      - POSTGRES_USER=${POSTGRES_USER:-marketviz}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-marketviz123}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U marketviz"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Batch Processing - Data generation (original functionality)
   market-viz:
     build: .
     image: market-research-visualization:latest
-    container_name: market-viz
+    container_name: market-viz-batch
     volumes:
-      # Mount outputs directory to access generated files
       - ./outputs:/app/outputs
-      # Mount data cache to persist downloaded data
       - ./data:/app/data
     environment:
-      # Set to 'true' to use sample data (for testing without API access)
       - USE_SAMPLE_DATA=false
-      # Optional: Add your Alpha Vantage API key
       - ALPHA_VANTAGE_API_KEY=${ALPHA_VANTAGE_API_KEY:-}
-    # Default: 30 stocks with monthly animation
     command: ["--max-stocks", "30", "--animation-period", "M"]
+    profiles: ["batch"]
 
   # Quick test with sample data (10 stocks)
   market-viz-test:
@@ -43,3 +87,7 @@ services:
       - USE_SAMPLE_DATA=false
     command: []  # No limit, processes all S&P 500
     profiles: ["full"]
+
+volumes:
+  postgres_data:
+    driver: local

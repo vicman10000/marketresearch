@@ -268,7 +268,17 @@ class Dashboard {
     
     async loadMetadata() {
         try {
-            const response = await fetch('metadata.json');
+            // Try API first if available
+            if (typeof apiClient !== 'undefined') {
+                const summary = await apiClient.getDashboardSummary().catch(() => null);
+                if (summary) {
+                    this.updateDashboardStatsFromAPI(summary);
+                    return;
+                }
+            }
+            
+            // Fallback to static file
+            const response = await fetch('/metadata.json');
             if (response.ok) {
                 const metadata = await response.json();
                 this.updateDashboardStats(metadata);
@@ -276,6 +286,37 @@ class Dashboard {
             }
         } catch (error) {
             console.log('Metadata not available:', error);
+        }
+    }
+    
+    updateDashboardStatsFromAPI(summary) {
+        // Update stat cards with API data
+        const marketCapEl = document.getElementById('totalMarketCap');
+        const avgReturnEl = document.getElementById('avgReturn');
+        const avgVolatilityEl = document.getElementById('avgVolatility');
+        const stockCountEl = document.getElementById('stockCount');
+        
+        if (marketCapEl) {
+            marketCapEl.textContent = this.formatMarketCap(summary.total_market_cap);
+        }
+        
+        if (avgReturnEl) {
+            avgReturnEl.textContent = summary.avg_ytd_return.toFixed(2) + '%';
+        }
+        
+        if (avgVolatilityEl) {
+            avgVolatilityEl.textContent = summary.avg_volatility.toFixed(2) + '%';
+        }
+        
+        if (stockCountEl) {
+            stockCountEl.textContent = summary.total_stocks;
+        }
+        
+        // Update data source indicator
+        const dataSourceEl = document.getElementById('dataSourceType');
+        if (dataSourceEl) {
+            dataSourceEl.innerHTML = '<i class="fas fa-database"></i> Live API';
+            dataSourceEl.style.color = 'var(--success)';
         }
     }
     
@@ -413,7 +454,28 @@ class Dashboard {
 
 // Initialize dashboard when DOM is ready
 document.addEventListener('DOMContentLoaded', () => {
-    new Dashboard();
+    const dashboard = new Dashboard();
+    
+    // Listen for auth events
+    window.addEventListener('auth-required', () => {
+        console.log('Authentication required - redirecting to login');
+        // Show login modal or redirect
+        // For now, just log out
+        if (typeof apiClient !== 'undefined' && apiClient.isAuthenticated()) {
+            apiClient.clearTokens();
+        }
+    });
+    
+    // Initialize WebSocket for real-time updates if API client available
+    if (typeof apiClient !== 'undefined' && apiClient.isAuthenticated()) {
+        apiClient.connectWebSocket('/ws/market-updates', (data) => {
+            console.log('WebSocket message:', data);
+            // Handle real-time updates
+            if (data.type === 'market_update') {
+                dashboard.loadMetadata(); // Refresh dashboard stats
+            }
+        });
+    }
 });
 
 // Handle window resize for responsive behavior
