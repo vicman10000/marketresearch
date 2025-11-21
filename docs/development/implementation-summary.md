@@ -340,10 +340,10 @@ While not part of the current implementation, future improvements could include:
 
 ## 📚 Documentation
 
-- **MIGRATION_NOTES.md**: Phase-by-phase implementation details
-- **tests/README.md**: Testing guide and examples
+- **[Migration Notes](migration-notes.md)**: Phase-by-phase implementation details
+- **[Testing Guide](testing.md)**: Testing guide and examples
+- **[Architecture](architecture.md)**: System architecture overview
 - **src/*/**: Inline docstrings for all new modules
-- **IMPLEMENTATION_SUMMARY.md**: This file
 
 ## 🎓 Key Learnings
 

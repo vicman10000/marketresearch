@@ -19,7 +19,7 @@ docker-compose --profile test up market-viz-test
 
 **Benefits:** Zero dependency issues, works everywhere, clean environment.
 
-📖 **See [DOCKER.md](DOCKER.md) for full Docker guide**
+📖 **See [Docker Deployment Guide](deployment/docker.md) for full Docker guide**
 
 ---
 
@@ -212,9 +212,9 @@ python app.py
 
 ## What's Next?
 
-- Read the full [README.md](README.md) for advanced usage
-- Check [examples/example_usage.py](examples/example_usage.py) for code samples
-- Customize [config.py](config.py) for your preferences
+- Read the full [User Guide](guides/usage.md) for advanced usage
+- Check [example_usage.py](../examples/example_usage.py) for code samples
+- Customize [config.py](../config.py) for your preferences
 - Explore the source code in `src/` directory
 
 ## Support
@@ -223,8 +223,9 @@ If you run into issues:
 1. Check that all dependencies installed: `pip list | grep -E "pandas|plotly|yfinance"`
 2. Verify Python version: `python --version` (should be 3.8+)
 3. Try with fewer stocks first: `--max-stocks 10`
-4. Check the error message and consult README.md
+4. Check the [Troubleshooting Guide](guides/troubleshooting.md)
 
 ---
 
 **Happy Visualizing!** 🚀📊
+

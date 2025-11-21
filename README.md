@@ -241,7 +241,7 @@ docker-compose run market-viz --animation-period W --max-stocks 100
 - **Persistent cache** - Data cached between runs via volumes
 - **Easy CI/CD integration** - Perfect for automated reports
 
-📖 **See [DOCKER.md](DOCKER.md) for complete Docker documentation**
+📖 **See [Docker Deployment Guide](docs/deployment/docker.md) for complete Docker documentation**
 
 ## Usage Guide
 
@@ -694,9 +694,10 @@ Potential additions:
 ## Support
 
 For issues, questions, or suggestions:
+- Check the **[Documentation](docs/README.md)** for comprehensive guides
 - Open an issue on GitHub
-- Check the examples folder for usage patterns
-- Review the configuration options in config.py
+- Review examples in the `examples/` folder
+- Check configuration options in `config.py`
 
 ## Testing
 
@@ -726,13 +727,24 @@ pytest tests/unit/test_data_processor.py -v
 
 See `tests/README.md` for detailed testing guide.
 
-## Documentation
+## 📚 Documentation
 
-- **[README.md](README.md)** - This file (getting started)
-- **[IMPLEMENTATION_SUMMARY.md](IMPLEMENTATION_SUMMARY.md)** - Complete modernization overview
-- **[MIGRATION_NOTES.md](MIGRATION_NOTES.md)** - Phase-by-phase implementation details
-- **[DOCKER.md](DOCKER.md)** - Docker deployment guide
-- **[tests/README.md](tests/README.md)** - Testing guide
+Comprehensive documentation is available in the [`docs/`](docs/) directory:
+
+### Getting Started
+- **[Quickstart Guide](docs/quickstart.md)** - Get up and running in 5 minutes
+- **[Docker Deployment](docs/deployment/docker.md)** - Deploy using Docker
+
+### Development & Architecture
+- **[Architecture Overview](docs/development/architecture.md)** - System design and patterns
+- **[Implementation Summary](docs/development/implementation-summary.md)** - Complete modernization overview
+- **[Migration Notes](docs/development/migration-notes.md)** - Phase-by-phase implementation details
+- **[Testing Guide](docs/development/testing.md)** - How to test the application
+
+### Additional Documentation
+- **[tests/README.md](tests/README.md)** - Testing guide and examples
+
+**[📖 Full Documentation Index](docs/README.md)** - Complete documentation navigation
 
 ## Changelog
 
@@ -774,7 +786,7 @@ See `tests/README.md` for detailed testing guide.
 3. Run tests to verify: `pytest`
 4. Gradually adopt new features (database, metrics, etc.)
 
-See [MIGRATION_NOTES.md](MIGRATION_NOTES.md) for detailed migration guide.
+See **[Migration Notes](docs/development/migration-notes.md)** for detailed migration guide.
 
 ---
 

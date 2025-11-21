@@ -378,10 +378,12 @@ spec:
 ## Support
 
 For issues or questions:
-- Check the main [README.md](README.md)
-- Review [QUICKSTART.md](QUICKSTART.md)
+- Check the main [README](../../README.md)
+- Review [Quickstart Guide](../quickstart.md)
+- Check [Production Deployment Guide](production.md)
 - Open an issue on GitHub
 
 ---
 
 **Pro Tip**: Use `docker-compose run` instead of `docker-compose up` when you want to pass custom arguments to the application!
+
