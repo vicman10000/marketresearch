@@ -50,8 +50,16 @@ class DataFetcher:
 
         print("Fetching S&P 500 constituents from Wikipedia...")
         try:
-            # Fetch from Wikipedia
-            tables = pd.read_html(config.SP500_WIKIPEDIA_URL)
+            # Fetch from Wikipedia with headers to avoid 403 error
+            import urllib.request
+            req = urllib.request.Request(
+                config.SP500_WIKIPEDIA_URL,
+                headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'}
+            )
+            with urllib.request.urlopen(req) as response:
+                html_content = response.read()
+
+            tables = pd.read_html(html_content)
             df = tables[0]
 
             # Rename columns for consistency
@@ -233,6 +241,12 @@ class DataFetcher:
 
         # Merge all data
         print("\nMerging datasets...")
+
+        # Drop columns from stock_data that will come from constituents (avoid _x/_y suffixes)
+        cols_to_drop = ['Security', 'Sector', 'Sub_Industry']
+        for col in cols_to_drop:
+            if col in stock_data.columns:
+                stock_data = stock_data.drop(columns=[col])
 
         # Merge constituents with stock data
         merged = stock_data.merge(
