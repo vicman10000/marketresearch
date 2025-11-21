@@ -19,6 +19,79 @@ class StaticVisualizer:
     def __init__(self):
         """Initialize StaticVisualizer"""
         self.sector_colors = config.SECTOR_COLORS
+        
+        # Professional financial theme configuration
+        self.theme_config = {
+            'template': 'plotly_white',
+            'font': dict(
+                family='Inter, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif',
+                size=13,
+                color='#1e293b'
+            ),
+            'title': dict(
+                font=dict(size=20, family='Inter', weight=600, color='#1e293b'),
+                x=0.5,
+                xanchor='center',
+                pad=dict(t=20, b=20)
+            ),
+            'plot_bgcolor': '#ffffff',
+            'paper_bgcolor': '#ffffff',
+            'margin': dict(l=60, r=40, t=80, b=60),
+            'hovermode': 'closest',
+            'hoverlabel': dict(
+                bgcolor='white',
+                font_size=12,
+                font_family='Inter',
+                bordercolor='#e2e8f0'
+            ),
+            'xaxis': dict(
+                showgrid=True,
+                gridwidth=1,
+                gridcolor='#f1f5f9',
+                zeroline=True,
+                zerolinewidth=2,
+                zerolinecolor='#e2e8f0',
+                showline=True,
+                linewidth=1,
+                linecolor='#cbd5e1',
+                title_font=dict(size=14, family='Inter', weight=600)
+            ),
+            'yaxis': dict(
+                showgrid=True,
+                gridwidth=1,
+                gridcolor='#f1f5f9',
+                zeroline=True,
+                zerolinewidth=2,
+                zerolinecolor='#e2e8f0',
+                showline=True,
+                linewidth=1,
+                linecolor='#cbd5e1',
+                title_font=dict(size=14, family='Inter', weight=600)
+            ),
+            'legend': dict(
+                orientation='v',
+                yanchor='top',
+                y=1,
+                xanchor='right',
+                x=1,
+                bgcolor='rgba(255, 255, 255, 0.9)',
+                bordercolor='#e2e8f0',
+                borderwidth=1,
+                font=dict(size=12)
+            )
+        }
+        
+        # Enhanced color palette for professional look
+        self.professional_colors = {
+            'blue': '#0ea5e9',
+            'green': '#10b981',
+            'orange': '#f59e0b',
+            'purple': '#8b5cf6',
+            'red': '#ef4444',
+            'teal': '#14b8a6',
+            'indigo': '#6366f1',
+            'pink': '#ec4899'
+        }
 
     def create_bubble_chart(self, df, x_col='Volatility_20', y_col='YTD_Return',
                            size_col='Market_Cap', color_col='Sector',
@@ -68,31 +141,42 @@ class StaticVisualizer:
             title=title
         )
 
-        # Update layout
+        # Update layout with professional theme
         fig.update_layout(
-            title_x=0.5,
+            title=dict(text=title, **self.theme_config['title']),
             xaxis_title=x_col.replace('_', ' '),
             yaxis_title=y_col.replace('_', ' ') + ' (%)',
             legend_title=color_col,
-            hovermode='closest',
-            template='plotly_white',
-            font=dict(size=12, family='Arial'),
+            template=self.theme_config['template'],
+            font=self.theme_config['font'],
+            plot_bgcolor=self.theme_config['plot_bgcolor'],
+            paper_bgcolor=self.theme_config['paper_bgcolor'],
+            margin=self.theme_config['margin'],
+            hovermode=self.theme_config['hovermode'],
+            hoverlabel=self.theme_config['hoverlabel'],
+            xaxis=self.theme_config['xaxis'],
+            yaxis=self.theme_config['yaxis'],
+            legend=self.theme_config['legend'],
             height=700,
-            width=1200
+            width=None,  # Auto-width for responsive design
+            autosize=True
         )
 
-        # Update bubble style
+        # Update bubble style with professional look
         fig.update_traces(
             marker=dict(
-                opacity=config.BUBBLE_OPACITY,
-                line=dict(width=config.BUBBLE_BORDER_WIDTH, color='white')
-            )
+                opacity=0.7,
+                line=dict(width=1.5, color='rgba(255, 255, 255, 0.6)'),
+                sizemode='diameter'
+            ),
+            textfont=dict(family='Inter', size=10)
         )
 
-        # Add reference lines
-        fig.add_hline(y=0, line_dash="dash", line_color="gray", opacity=0.5)
+        # Add reference lines with professional styling
+        fig.add_hline(y=0, line_dash="dash", line_color="#94a3b8", opacity=0.6, line_width=1.5)
         fig.add_vline(x=plot_df[x_col].median(), line_dash="dash",
-                     line_color="gray", opacity=0.5)
+                     line_color="#94a3b8", opacity=0.6, line_width=1.5,
+                     annotation_text="Median", annotation_position="top")
 
         # Save if path provided
         if save_path:
@@ -133,29 +217,38 @@ class StaticVisualizer:
             orientation='h',
             marker=dict(
                 color=sector_summary['Sector'].map(self.sector_colors),
-                line=dict(color='white', width=1)
+                line=dict(color='rgba(255, 255, 255, 0.6)', width=1.5),
+                opacity=0.9
             ),
             text=sector_summary['Avg_YTD_Return'].round(2),
             texttemplate='%{text}%',
-            textposition='auto',
+            textposition='outside',
+            textfont=dict(family='Inter', size=12, weight=600),
             hovertemplate='<b>%{y}</b><br>' +
                          'Avg YTD Return: %{x:.2f}%<br>' +
                          '<extra></extra>'
         ))
 
         fig.update_layout(
-            title='Average YTD Return by Sector',
-            title_x=0.5,
+            title=dict(text='Average YTD Return by Sector', **self.theme_config['title']),
             xaxis_title='Average YTD Return (%)',
             yaxis_title='Sector',
-            template='plotly_white',
+            template=self.theme_config['template'],
+            font=self.theme_config['font'],
+            plot_bgcolor=self.theme_config['plot_bgcolor'],
+            paper_bgcolor=self.theme_config['paper_bgcolor'],
+            margin=self.theme_config['margin'],
+            hoverlabel=self.theme_config['hoverlabel'],
+            xaxis=self.theme_config['xaxis'],
+            yaxis={**self.theme_config['yaxis'], 'showgrid': False},
             height=600,
-            width=1000,
+            width=None,
+            autosize=True,
             showlegend=False
         )
 
-        # Add reference line at 0
-        fig.add_vline(x=0, line_dash="solid", line_color="black", line_width=1)
+        # Add reference line at 0 with professional styling
+        fig.add_vline(x=0, line_dash="solid", line_color="#1e293b", line_width=2, opacity=0.8)
 
         if save_path:
             os.makedirs(os.path.dirname(save_path), exist_ok=True)

@@ -15,8 +15,7 @@ RUN apt-get update && apt-get install -y \
 COPY requirements.txt .
 
 # Install Python dependencies
-RUN pip install --no-cache-dir pandas numpy requests beautifulsoup4 lxml plotly kaleido tqdm python-dateutil && \
-    pip install --no-cache-dir --no-deps yfinance
+RUN pip install --no-cache-dir pandas numpy requests beautifulsoup4 lxml plotly kaleido tqdm python-dateutil yfinance
 
 # Create multitasking stub (workaround for yfinance)
 RUN echo 'def task(func):\n    return func\n\ndef set_max_threads(n):\n    pass\n\ndef wait_for_tasks():\n    pass\n\n__version__ = "0.0.9"' > /usr/local/lib/python3.11/site-packages/multitasking.py
@@ -26,6 +25,10 @@ COPY . .
 
 # Create necessary directories
 RUN mkdir -p data/cache outputs/static outputs/animated
+
+# Make entrypoint script executable and fix line endings
+RUN chmod +x /app/docker-entrypoint.sh && \
+    sed -i 's/\r$//' /app/docker-entrypoint.sh
 
 # Set environment variables
 ENV PYTHONUNBUFFERED=1

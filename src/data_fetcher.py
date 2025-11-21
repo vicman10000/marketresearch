@@ -211,6 +211,27 @@ class DataFetcher:
         Returns:
             DataFrame with all data merged
         """
+        # Check if we should use sample data
+        use_sample_data = os.environ.get('USE_SAMPLE_DATA', 'false').lower() == 'true'
+        
+        if use_sample_data:
+            sample_file = os.path.join(os.path.dirname(self.cache_dir), 'sample_complete_data.csv')
+            if os.path.exists(sample_file):
+                print(f"Loading sample data from {sample_file}...")
+                df = pd.read_csv(sample_file)
+                df['Date'] = pd.to_datetime(df['Date'])
+                
+                # Limit stocks if specified
+                if max_stocks:
+                    symbols = df['Symbol'].unique()[:max_stocks]
+                    df = df[df['Symbol'].isin(symbols)]
+                
+                print(f"Loaded {len(df)} rows for {df['Symbol'].nunique()} stocks")
+                return df
+            else:
+                print(f"Warning: Sample data file not found at {sample_file}")
+                print("Falling back to live data fetching...")
+        
         # Fetch S&P 500 constituents
         constituents = self.fetch_sp500_constituents(use_cache=use_cache)
 

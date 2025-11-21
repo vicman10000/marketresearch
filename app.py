@@ -187,17 +187,37 @@ class MarketVisualizationApp:
             report_path = os.path.join(config.OUTPUT_DIR, 'market_report.txt')
             generate_report(self.processed_data, self.sector_summary, report_path)
 
-            # Save metadata
+            # Calculate summary statistics for metadata
+            latest_data = self.processed_data[self.processed_data['Date'] == self.processed_data['Date'].max()]
+            total_market_cap = latest_data['Market_Cap'].sum()
+            avg_ytd_return = latest_data['YTD_Return'].mean()
+            avg_volatility = latest_data['Volatility_20'].mean()
+            
+            # Determine data source
+            use_sample_data = os.environ.get('USE_SAMPLE_DATA', 'false').lower() == 'true'
+            
+            # Save metadata with summary
             metadata = {
                 'run_date': datetime.now().isoformat(),
                 'start_date': self.start_date,
                 'end_date': self.end_date,
+                'market': 'S&P 500',
+                'data_source': 'sample' if use_sample_data else 'live',
                 'total_stocks': self.processed_data['Symbol'].nunique(),
                 'total_data_points': len(self.processed_data),
                 'animation_periods': self.animation_data['Year_Month'].nunique(),
-                'sectors': sorted(self.processed_data['Sector'].unique().tolist())
+                'sectors': sorted(self.processed_data['Sector'].unique().tolist()),
+                'summary': {
+                    'total_stocks': self.processed_data['Symbol'].nunique(),
+                    'total_market_cap': float(total_market_cap),
+                    'avg_ytd_return': float(avg_ytd_return),
+                    'avg_volatility': float(avg_volatility)
+                }
             }
             save_metadata(metadata, os.path.join(config.OUTPUT_DIR, 'metadata.json'))
+            
+            # Copy dashboard assets
+            self._copy_dashboard_assets()
 
             # Save processed data
             self.processed_data.to_csv(
@@ -221,6 +241,40 @@ class MarketVisualizationApp:
             import traceback
             traceback.print_exc()
             return False
+    
+    def _copy_dashboard_assets(self):
+        """Copy dashboard HTML, CSS, and JS files to output directory"""
+        import shutil
+        
+        try:
+            # Create assets directory
+            assets_dir = os.path.join(config.OUTPUT_DIR, 'assets')
+            os.makedirs(assets_dir, exist_ok=True)
+            
+            # Source files from project root
+            project_root = os.path.dirname(os.path.abspath(__file__))
+            source_assets = os.path.join(project_root, 'outputs', 'assets')
+            source_index = os.path.join(project_root, 'outputs', 'index.html')
+            
+            # Copy assets if they exist in source
+            if os.path.exists(source_assets):
+                for filename in ['styles.css', 'app.js']:
+                    src = os.path.join(source_assets, filename)
+                    dst = os.path.join(assets_dir, filename)
+                    if os.path.exists(src):
+                        shutil.copy2(src, dst)
+                        print(f"Copied {filename} to assets/")
+            
+            # Copy index.html if it exists
+            if os.path.exists(source_index):
+                dst = os.path.join(config.OUTPUT_DIR, 'index.html')
+                shutil.copy2(source_index, dst)
+                print(f"Copied index.html to outputs/")
+            
+            print("\n✓ Dashboard assets copied successfully")
+            
+        except Exception as e:
+            print(f"Warning: Could not copy dashboard assets: {e}")
 
     def run(self, skip_static=False, skip_animated=False):
         """
@@ -268,11 +322,12 @@ class MarketVisualizationApp:
         print("PIPELINE COMPLETE!")
         print("="*60)
         print(f"\nOutputs saved to:")
+        print(f"  - Main Dashboard: {os.path.join(config.OUTPUT_DIR, 'index.html')}")
         print(f"  - Static visualizations: {config.STATIC_OUTPUT_DIR}")
         print(f"  - Animated visualizations: {config.ANIMATED_OUTPUT_DIR}")
         print(f"  - Data files: {config.DATA_DIR}")
         print(f"  - Reports: {config.OUTPUT_DIR}")
-        print("\nOpen the HTML files in your browser to view the visualizations!")
+        print("\n🚀 Open index.html in your browser for the full dashboard experience!")
         print("="*60 + "\n")
 
         return True

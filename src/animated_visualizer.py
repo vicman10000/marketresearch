@@ -18,6 +18,82 @@ class AnimatedVisualizer:
     def __init__(self):
         """Initialize AnimatedVisualizer"""
         self.sector_colors = config.SECTOR_COLORS
+        
+        # Professional financial theme configuration (same as static)
+        self.theme_config = {
+            'template': 'plotly_white',
+            'font': dict(
+                family='Inter, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif',
+                size=13,
+                color='#1e293b'
+            ),
+            'title': dict(
+                font=dict(size=20, family='Inter', weight=600, color='#1e293b'),
+                x=0.5,
+                xanchor='center',
+                pad=dict(t=20, b=20)
+            ),
+            'plot_bgcolor': '#ffffff',
+            'paper_bgcolor': '#ffffff',
+            'margin': dict(l=60, r=40, t=80, b=60),
+            'hovermode': 'closest',
+            'hoverlabel': dict(
+                bgcolor='white',
+                font_size=12,
+                font_family='Inter',
+                bordercolor='#e2e8f0'
+            ),
+            'xaxis': dict(
+                showgrid=True,
+                gridwidth=1,
+                gridcolor='#f1f5f9',
+                zeroline=True,
+                zerolinewidth=2,
+                zerolinecolor='#e2e8f0',
+                showline=True,
+                linewidth=1,
+                linecolor='#cbd5e1',
+                title_font=dict(size=14, family='Inter', weight=600)
+            ),
+            'yaxis': dict(
+                showgrid=True,
+                gridwidth=1,
+                gridcolor='#f1f5f9',
+                zeroline=True,
+                zerolinewidth=2,
+                zerolinecolor='#e2e8f0',
+                showline=True,
+                linewidth=1,
+                linecolor='#cbd5e1',
+                title_font=dict(size=14, family='Inter', weight=600)
+            ),
+            'legend': dict(
+                orientation='v',
+                yanchor='top',
+                y=1,
+                xanchor='right',
+                x=1,
+                bgcolor='rgba(255, 255, 255, 0.9)',
+                bordercolor='#e2e8f0',
+                borderwidth=1,
+                font=dict(size=12)
+            ),
+            'updatemenus': [{
+                'type': 'buttons',
+                'showactive': True,
+                'bgcolor': '#ffffff',
+                'bordercolor': '#e2e8f0',
+                'borderwidth': 1,
+                'font': dict(size=12, family='Inter')
+            }],
+            'sliders': [{
+                'bgcolor': '#ffffff',
+                'bordercolor': '#e2e8f0',
+                'borderwidth': 1,
+                'font': dict(size=11, family='Inter'),
+                'activebgcolor': '#0ea5e9'
+            }]
+        }
 
     def create_animated_bubble_chart(self, df, x_col='Volatility_20', y_col='YTD_Return',
                                      size_col='Market_Cap', color_col='Sector',
@@ -85,17 +161,25 @@ class AnimatedVisualizer:
             title=title
         )
 
-        # Update layout for better animation
+        # Update layout for better animation with professional theme
         fig.update_layout(
-            title_x=0.5,
+            title=dict(text=title, **self.theme_config['title']),
             xaxis_title=x_col.replace('_', ' '),
             yaxis_title=y_col.replace('_', ' ') + ' (%)',
             legend_title=color_col,
-            hovermode='closest',
-            template='plotly_white',
-            font=dict(size=12, family='Arial'),
+            template=self.theme_config['template'],
+            font=self.theme_config['font'],
+            plot_bgcolor=self.theme_config['plot_bgcolor'],
+            paper_bgcolor=self.theme_config['paper_bgcolor'],
+            margin=self.theme_config['margin'],
+            hovermode=self.theme_config['hovermode'],
+            hoverlabel=self.theme_config['hoverlabel'],
+            xaxis=self.theme_config['xaxis'],
+            yaxis=self.theme_config['yaxis'],
+            legend=self.theme_config['legend'],
             height=700,
-            width=1200,
+            width=None,
+            autosize=True,
             # Animation settings
             updatemenus=[{
                 'buttons': [
@@ -144,16 +228,18 @@ class AnimatedVisualizer:
             }]
         )
 
-        # Update bubble style
+        # Update bubble style with professional look
         fig.update_traces(
             marker=dict(
-                opacity=config.BUBBLE_OPACITY,
-                line=dict(width=config.BUBBLE_BORDER_WIDTH, color='white')
-            )
+                opacity=0.7,
+                line=dict(width=1.5, color='rgba(255, 255, 255, 0.6)'),
+                sizemode='diameter'
+            ),
+            textfont=dict(family='Inter', size=10)
         )
 
-        # Add reference lines
-        fig.add_hline(y=0, line_dash="dash", line_color="gray", opacity=0.5)
+        # Add reference lines with professional styling
+        fig.add_hline(y=0, line_dash="dash", line_color="#94a3b8", opacity=0.6, line_width=1.5)
 
         # Update frame durations
         for frame in fig.frames:

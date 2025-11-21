@@ -66,8 +66,10 @@ for symbol, name, sector in stocks:
 # Create DataFrame
 df = pd.DataFrame(all_data)
 
-# Save to cache directory
-cache_dir = '/home/user/marketresearchvisualization/data/cache'
+# Determine base directory (works both locally and in Docker)
+base_dir = os.getcwd() if os.path.exists(os.path.join(os.getcwd(), 'data')) else '/app'
+data_dir = os.path.join(base_dir, 'data')
+cache_dir = os.path.join(data_dir, 'cache')
 os.makedirs(cache_dir, exist_ok=True)
 
 # Save individual stock files (mimicking yfinance cache)
@@ -80,7 +82,7 @@ for symbol in df['Symbol'].unique():
     print(f"Created {cache_file}")
 
 # Also save complete dataset
-output_file = '/home/user/marketresearchvisualization/data/sample_complete_data.csv'
+output_file = os.path.join(data_dir, 'sample_complete_data.csv')
 df.to_csv(output_file, index=False)
 print(f"\nCreated complete dataset: {output_file}")
 print(f"Total rows: {len(df)}")
