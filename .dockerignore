@@ -1,0 +1,52 @@
+# Git
+.git
+.gitignore
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+dist/
+build/
+
+# Virtual environments
+venv/
+env/
+ENV/
+.venv
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Data and outputs (will be mounted as volumes)
+data/cache/*.csv
+outputs/static/*.html
+outputs/animated/*.html
+outputs/*.txt
+outputs/*.json
+
+# Logs
+*.log
+
+# Documentation (keep only essential)
+QUICKSTART.md
+
+# Examples output
+examples/*.html
+examples/*.csv
+
+# Test files
+.pytest_cache/
+.coverage
+htmlcov/
+
+# OS files
+Thumbs.db

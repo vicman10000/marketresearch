@@ -2,8 +2,30 @@
 
 Get up and running with Market Research Visualization in 5 minutes!
 
-## Prerequisites
+## Choose Your Setup Method
 
+### 🐳 Docker (Recommended - Easiest)
+**No Python installation needed!** Just Docker.
+
+```bash
+# 1. Build the image
+docker-compose build
+
+# 2. Run with sample data (2 minutes)
+docker-compose --profile test up market-viz-test
+
+# 3. Open outputs/static/dashboard.html in your browser
+```
+
+**Benefits:** Zero dependency issues, works everywhere, clean environment.
+
+📖 **See [DOCKER.md](DOCKER.md) for full Docker guide**
+
+---
+
+### 🐍 Python (Alternative)
+
+**Prerequisites:**
 - Python 3.8+ installed
 - pip package manager
 - Internet connection (for data fetching)

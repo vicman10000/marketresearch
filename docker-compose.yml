@@ -1,0 +1,45 @@
+version: '3.8'
+
+services:
+  market-viz:
+    build: .
+    image: market-research-visualization:latest
+    container_name: market-viz
+    volumes:
+      # Mount outputs directory to access generated files
+      - ./outputs:/app/outputs
+      # Mount data cache to persist downloaded data
+      - ./data:/app/data
+    environment:
+      # Set to 'true' to use sample data (for testing without API access)
+      - USE_SAMPLE_DATA=false
+      # Optional: Add your Alpha Vantage API key
+      - ALPHA_VANTAGE_API_KEY=${ALPHA_VANTAGE_API_KEY:-}
+    # Default: 30 stocks with monthly animation
+    command: ["--max-stocks", "30", "--animation-period", "M"]
+
+  # Quick test with sample data (10 stocks)
+  market-viz-test:
+    build: .
+    image: market-research-visualization:latest
+    container_name: market-viz-test
+    volumes:
+      - ./outputs:/app/outputs
+      - ./data:/app/data
+    environment:
+      - USE_SAMPLE_DATA=true
+    command: ["--max-stocks", "10"]
+    profiles: ["test"]
+
+  # Full S&P 500 analysis (takes longer)
+  market-viz-full:
+    build: .
+    image: market-research-visualization:latest
+    container_name: market-viz-full
+    volumes:
+      - ./outputs:/app/outputs
+      - ./data:/app/data
+    environment:
+      - USE_SAMPLE_DATA=false
+    command: []  # No limit, processes all S&P 500
+    profiles: ["full"]

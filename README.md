@@ -127,6 +127,52 @@ animator.create_animated_bubble_chart(
 )
 ```
 
+## 🐳 Docker Deployment (Recommended)
+
+### Why Docker?
+- ✅ **Zero dependency issues** - Everything packaged and ready to run
+- ✅ **Consistent environment** - Works the same everywhere
+- ✅ **Easy deployment** - One command to start
+- ✅ **Portable** - Run on any system with Docker
+
+### Quick Start with Docker
+
+```bash
+# Build and run with Docker Compose (easiest)
+docker-compose up market-viz
+
+# Or use Docker directly
+docker build -t market-viz .
+docker run -v $(pwd)/outputs:/app/outputs market-viz --max-stocks 30
+```
+
+Your visualizations will appear in `./outputs/` directory!
+
+### Common Docker Commands
+
+```bash
+# Quick test with sample data (2 minutes)
+docker-compose --profile test up market-viz-test
+
+# Full S&P 500 analysis (30 minutes first run)
+docker-compose --profile full up market-viz-full
+
+# Custom date range
+docker-compose run market-viz --start-date 2023-01-01 --max-stocks 50
+
+# Weekly animations
+docker-compose run market-viz --animation-period W --max-stocks 100
+```
+
+### Docker Benefits
+
+- **No Python installation needed** - Just Docker
+- **No dependency conflicts** - Clean isolated environment
+- **Persistent cache** - Data cached between runs via volumes
+- **Easy CI/CD integration** - Perfect for automated reports
+
+📖 **See [DOCKER.md](DOCKER.md) for complete Docker documentation**
+
 ## Usage Guide
 
 ### Command Line Interface
