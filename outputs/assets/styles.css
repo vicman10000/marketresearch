@@ -37,7 +37,7 @@
     /* Dimensions */
     --sidebar-width: 260px;
     --sidebar-collapsed: 70px;
-    --header-height: 70px;
+    --header-height: 60px;
     --transition-speed: 0.3s;
 }
 
@@ -379,7 +379,7 @@ body {
 .content-header {
     background-color: var(--bg-secondary);
     border-bottom: 1px solid var(--border-color);
-    padding: 20px 32px;
+    padding: 12px 24px;
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -567,10 +567,10 @@ body {
    ================================================================= */
 
 .content-container {
-    padding: 24px;
+    padding: 20px;
     max-width: 1920px;
     margin: 0 auto;
-    height: calc(100vh - 70px);
+    height: calc(100vh - var(--header-height));
     overflow-y: auto;
     overflow-x: hidden;
 }
@@ -581,7 +581,9 @@ body {
 }
 
 .view-content.active {
-    display: block;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
 }
 
 #dashboardView {
@@ -594,11 +596,6 @@ body {
     display: none;
     animation: fadeIn 0.4s cubic-bezier(0.4, 0, 0.2, 1);
     height: 100%;
-}
-
-.view-content.active {
-    display: flex;
-    flex-direction: column;
 }
 
 @keyframes fadeIn {
@@ -619,19 +616,19 @@ body {
 .dashboard-grid {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
-    gap: 20px;
-    margin-bottom: 20px;
+    gap: 16px;
+    margin-bottom: 16px;
     flex-shrink: 0;
 }
 
 .stat-card {
     background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--bg-tertiary) 100%);
     border: 1px solid var(--border-color);
-    border-radius: 16px;
-    padding: 20px 24px;
+    border-radius: 12px;
+    padding: 16px 20px;
     display: flex;
     align-items: center;
-    gap: 16px;
+    gap: 14px;
     transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
     box-shadow: var(--shadow-sm);
     position: relative;
@@ -661,16 +658,16 @@ body {
 }
 
 .stat-icon {
-    width: 60px;
-    height: 60px;
-    border-radius: 14px;
+    width: 50px;
+    height: 50px;
+    border-radius: 12px;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 26px;
+    font-size: 22px;
     color: #ffffff;
     position: relative;
-    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
     flex-shrink: 0;
 }
 
@@ -709,20 +706,20 @@ body {
 }
 
 .stat-label {
-    font-size: 11px;
+    font-size: 10px;
     color: var(--text-muted);
     font-weight: 600;
-    margin-bottom: 6px;
+    margin-bottom: 4px;
     text-transform: uppercase;
     letter-spacing: 0.5px;
 }
 
 .stat-value {
-    font-size: 28px;
+    font-size: 24px;
     font-weight: 800;
     color: var(--text-primary);
     font-family: 'Roboto Mono', monospace;
-    margin-bottom: 4px;
+    margin-bottom: 3px;
     line-height: 1.1;
 }
 
@@ -886,20 +883,20 @@ body {
 }
 
 .dashboard-content {
-    height: calc(100vh - 380px);
-    min-height: 600px;
+    height: 100%;
     overflow: hidden;
 }
 
 #dashboardView .dashboard-main {
-    height: calc(100vh - 340px);
-    min-height: 650px;
+    flex: 1;
     display: flex;
     flex-direction: column;
+    min-height: 0; /* Important for flex children */
 }
 
 #dashboardView .dashboard-header {
     flex-shrink: 0;
+    margin-bottom: 12px;
 }
 
 #dashboardView .dashboard-content {
@@ -907,6 +904,22 @@ body {
     overflow: hidden;
     display: flex;
     flex-direction: column;
+    min-height: 0; /* Important for flex children */
+}
+
+/* Dynamic view (for navigation to other visualizations) */
+#dynamicView {
+    padding: 0;
+}
+
+#dynamicView .visualization-frame {
+    width: 100%;
+    height: 100%;
+}
+
+/* Report view */
+#reportView {
+    overflow-y: auto;
 }
 
 /* Ensure smooth iframe rendering */
